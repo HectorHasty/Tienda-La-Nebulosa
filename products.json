@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "id": 1,
+    "image": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop",
+    "name": "Auriculares Bluetooth Pro",
+    "price": 25.99,
+    "stock": 15
+  }
+]
