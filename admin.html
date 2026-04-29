@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛠️ Administración · TiendaExpress</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1e40af; --primary-hover: #1e3a8a;
+            --danger: #dc2626; --danger-hover: #b91c1c;
+            --bg: #f8fafc; --card-bg: #ffffff;
+            --text: #0f172a; --text-light: #475569;
+            --border: #e2e8f0;
+            --radius: 16px; --radius-sm: 10px;
+            --shadow: 0 4px 6px rgba(0,0,0,0.04), 0 10px 15px rgba(0,0,0,0.06);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg); color: var(--text);
+            line-height: 1.6; min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: #fff; border-radius: var(--radius);
+            width: 100%; max-width: 800px; padding: 28px;
+            box-shadow: var(--shadow); border: 1px solid var(--border);
+        }
+        h1 { font-size: 1.8rem; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        .admin-form {
+            background: #f9fafb; padding: 20px; border-radius: var(--radius-sm);
+            margin-bottom: 24px; display: flex; flex-direction: column; gap: 12px;
+        }
+        .admin-form label { font-weight: 600; font-size: 0.85rem; }
+        .admin-form input { padding: 10px 12px; border: 2px solid var(--border); border-radius: 8px; font-size: 0.9rem; }
+        .admin-form input:focus { border-color: var(--primary); outline: none; }
+        .form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+        .form-row > div { flex: 1; min-width: 140px; }
+        .image-preview {
+            width: 100px; height: 100px; border-radius: 8px; background: #f1f5f9;
+            display: flex; align-items: center; justify-content: center; font-size: 2rem;
+            border: 2px dashed var(--border); overflow: hidden; margin-top: 6px;
+        }
+        .image-preview img { width: 100%; height: 100%; object-fit: cover; }
+        .btn {
+            padding: 10px 20px; border-radius: 50px; font-weight: 600;
+            font-size: 0.9rem; cursor: pointer; border: none; transition: 0.2s;
+        }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn-danger:hover { background: var(--danger-hover); }
+        .btn-outline { background: transparent; border: 2px solid var(--border); color: var(--text); }
+        .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+        .product-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .product-table th { text-align: left; padding: 8px; border-bottom: 2px solid var(--border); color: var(--text-light); }
+        .product-table td { padding: 8px; border-bottom: 1px solid var(--border); }
+        .product-table .img-cell { width: 60px; }
+        .product-table .img-cell img { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; }
+        .toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
+            background: #0f172a; color: #fff; padding: 12px 24px; border-radius: 50px;
+            font-weight: 600; z-index: 400; opacity: 0; transition: all 0.35s;
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        #auth-section { margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛠️ Administración de Productos</h1>
+        <div id="auth-section">
+            <div id="login-form">
+                <label>Contraseña de administrador</label>
+                <input type="password" id="password" placeholder="••••••">
+                <button class="btn btn-primary" id="loginBtn">🔐 Iniciar sesión</button>
+                <p style="margin-top:8px;font-size:0.85rem;color:var(--text-light);">Debes ingresar la contraseña para administrar.</p>
+            </div>
+            <div id="logout-section" style="display:none;align-items:center;gap:12px;">
+                <span>Autenticado</span>
+                <button class="btn btn-outline" id="logoutBtn">Cerrar sesión</button>
+            </div>
+        </div>
+        <div id="admin-content" style="display:none;">
+            <div class="admin-form">
+                <input type="hidden" id="editProductId" value="">
+                <div class="form-row">
+                    <div>
+                        <label>📷 Foto del producto</label>
+                        <input type="file" id="productImageFile" accept="image/*">
+                        <div class="image-preview" id="imagePreview">📷</div>
+                    </div>
+                </div>
+                <label>Nombre del producto</label>
+                <input type="text" id="productName" placeholder="Nombre" required>
+                <div class="form-row">
+                    <div><label>Precio ($)</label><input type="number" id="productPrice" step="0.01" min="0" value="0.00"></div>
+                    <div><label>Stock</label><input type="number" id="productStock" min="0" value="10"></div>
+                </div>
+                <button class="btn btn-primary" id="saveProductBtn">💾 Guardar Producto</button>
+            </div>
+            <h2>📋 Productos Actuales</h2>
+            <table class="product-table">
+                <thead><tr><th>Imagen</th><th>Nombre</th><th>Precio</th><th>Stock</th><th>Acciones</th></tr></thead>
+                <tbody id="productTableBody"></tbody>
+            </table>
+        </div>
+        <p style="margin-top:20px;text-align:center;">
+            <a href="index.html" style="color:var(--primary);">← Volver a la tienda</a>
+        </p>
+    </div>
+    <div class="toast" id="toast"></div>
+
+    <script>
+        (function() {
+            // Configuración - DEBES REEMPLAZAR ESTOS VALORES
+            const GITHUB_USER = 'TU_USUARIO'; // tu nombre de usuario de GitHub
+            const GITHUB_REPO = 'TU_REPOSITORIO'; // nombre del repositorio
+            const GITHUB_TOKEN = 'ghp_xxxxxxxxxxxx'; // token de acceso personal con permiso repo
+            const PRODUCTS_PATH = 'products.json'; // archivo en la raíz del repositorio
+
+            // Contraseña local para acceder al panel
+            const LOCAL_PASSWORD = 'admin'; // puedes cambiarla
+
+            let products = [];
+            let currentImageData = '';
+            let authenticated = false;
+
+            // DOM
+            const loginForm = document.getElementById('login-form');
+            const logoutSection = document.getElementById('logout-section');
+            const adminContent = document.getElementById('admin-content');
+            const editProductId = document.getElementById('editProductId');
+            const productImageFile = document.getElementById('productImageFile');
+            const productNameInput = document.getElementById('productName');
+            const productPriceInput = document.getElementById('productPrice');
+            const productStockInput = document.getElementById('productStock');
+            const imagePreview = document.getElementById('imagePreview');
+            const productTableBody = document.getElementById('productTableBody');
+            const toastEl = document.getElementById('toast');
+
+            function showToast(msg) {
+                toastEl.textContent = msg;
+                toastEl.classList.add('show');
+                clearTimeout(toastEl._timeout);
+                toastEl._timeout = setTimeout(() => toastEl.classList.remove('show'), 2000);
+            }
+
+            // ---- Autenticación local ----
+            document.getElementById('loginBtn').addEventListener('click', () => {
+                const password = document.getElementById('password').value;
+                if (password === LOCAL_PASSWORD) {
+                    authenticated = true;
+                    loginForm.style.display = 'none';
+                    logoutSection.style.display = 'flex';
+                    adminContent.style.display = 'block';
+                    loadProductsFromGitHub();
+                } else {
+                    alert('Contraseña incorrecta');
+                }
+            });
+
+            document.getElementById('logoutBtn').addEventListener('click', () => {
+                authenticated = false;
+                loginForm.style.display = 'block';
+                logoutSection.style.display = 'none';
+                adminContent.style.display = 'none';
+                document.getElementById('password').value = '';
+            });
+
+            // ---- Funciones de GitHub API ----
+            async function loadProductsFromGitHub() {
+                try {
+                    const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${PRODUCTS_PATH}`;
+                    const resp = await fetch(url, {
+                        headers: { Authorization: `token ${GITHUB_TOKEN}` }
+                    });
+                    if (!resp.ok) throw new Error('Error al cargar products.json');
+                    const data = await resp.json();
+                    // El contenido viene en base64
+                    const content = JSON.parse(atob(data.content));
+                    // Podría ser array directamente o un objeto con IDs
+                    products = Array.isArray(content) ? content : Object.values(content);
+                    renderTable();
+                } catch (err) {
+                    console.error(err);
+                    showToast('❌ Error al cargar productos desde GitHub');
+                    // Si falla, inicializamos vacío
+                    products = [];
+                    renderTable();
+                }
+            }
+
+            async function saveProductsToGitHub() {
+                try {
+                    // Obtener archivo actual para tener el sha
+                    const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${PRODUCTS_PATH}`;
+                    const resp = await fetch(url, {
+                        headers: { Authorization: `token ${GITHUB_TOKEN}` }
+                    });
+                    if (!resp.ok) throw new Error('Error al obtener archivo actual');
+                    const data = await resp.json();
+                    const sha = data.sha;
+
+                    // Convertir productos a JSON y luego a base64
+                    const jsonStr = JSON.stringify(products, null, 2);
+                    // Codificación segura para base64
+                    const base64Content = btoa(unescape(encodeURIComponent(jsonStr)));
+
+                    const body = {
+                        message: 'Actualizar productos',
+                        content: base64Content,
+                        sha: sha
+                    };
+                    const updateResp = await fetch(url, {
+                        method: 'PUT',
+                        headers: {
+                            Authorization: `token ${GITHUB_TOKEN}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(body)
+                    });
+                    if (!updateResp.ok) throw new Error('Error al guardar cambios');
+                    showToast('✅ Productos actualizados en el repositorio');
+                } catch (err) {
+                    console.error(err);
+                    showToast('❌ Error: ' + err.message);
+                }
+            }
+
+            // ---- Manejo de la imagen ----
+            productImageFile.addEventListener('change', function() {
+                const file = this.files[0];
+                if (!file) { currentImageData = ''; imagePreview.innerHTML = '📷'; return; }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    currentImageData = e.target.result;
+                    imagePreview.innerHTML = `<img src="${currentImageData}" alt="Vista previa">`;
+                };
+                reader.readAsDataURL(file);
+            });
+
+            function resetForm() {
+                editProductId.value = '';
+                productImageFile.value = '';
+                currentImageData = '';
+                productNameInput.value = '';
+                productPriceInput.value = '0.00';
+                productStockInput.value = '10';
+                imagePreview.innerHTML = '📷';
+            }
+
+            function renderTable() {
+                productTableBody.innerHTML = '';
+                products.forEach(prod => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="img-cell">${prod.image ? `<img src="${prod.image}" onerror="this.innerHTML='📷'">` : '📷'}</td>
+                        <td>${prod.name}</td>
+                        <td>$${parseFloat(prod.price).toFixed(2)}</td>
+                        <td>${prod.stock}</td>
+                        <td>
+                            <button class="btn btn-outline edit-btn" data-id="${prod.id}" style="padding:4px 10px;margin-right:4px;">✏️</button>
+                            <button class="btn btn-danger delete-btn" data-id="${prod.id}" style="padding:4px 10px;">🗑️</button>
+                        </td>
+                    `;
+                    productTableBody.appendChild(row);
+                });
+                document.querySelectorAll('.edit-btn').forEach(b => b.addEventListener('click', () => loadForEdit(parseInt(b.dataset.id))));
+                document.querySelectorAll('.delete-btn').forEach(b => b.addEventListener('click', () => deleteProduct(parseInt(b.dataset.id))));
+            }
+
+            function loadForEdit(id) {
+                const prod = products.find(p => p.id === id);
+                if (!prod) return;
+                editProductId.value = prod.id;
+                productNameInput.value = prod.name;
+                productPriceInput.value = prod.price;
+                productStockInput.value = prod.stock;
+                productImageFile.value = '';
+                if (prod.image) {
+                    imagePreview.innerHTML = `<img src="${prod.image}" alt="Actual">`;
+                    currentImageData = prod.image;
+                } else {
+                    imagePreview.innerHTML = '📷';
+                    currentImageData = '';
+                }
+            }
+
+            function saveProduct() {
+                if (!authenticated) return alert('Debes iniciar sesión.');
+                const name = productNameInput.value.trim();
+                const price = parseFloat(productPriceInput.value);
+                const stock = parseInt(productStockInput.value) || 0;
+                if (!name || isNaN(price) || price < 0) { alert('Nombre y precio requeridos.'); return; }
+                const existingId = editProductId.value;
+                let finalImage = currentImageData;
+                if (existingId && !productImageFile.files.length) {
+                    const existingProd = products.find(p => p.id == existingId);
+                    if (existingProd && existingProd.image) finalImage = existingProd.image;
+                }
+                if (existingId) {
+                    const prod = products.find(p => p.id == existingId);
+                    if (prod) {
+                        prod.image = finalImage;
+                        prod.name = name;
+                        prod.price = price;
+                        prod.stock = stock;
+                    }
+                } else {
+                    products.push({
+                        id: Date.now(),
+                        image: finalImage || '',
+                        name,
+                        price,
+                        stock
+                    });
+                }
+                saveProductsToGitHub();
+                resetForm();
+                // La tabla se actualizará al recargar, pero podemos llamar a loadProductsFromGitHub() para refrescar inmediatamente
+                // Pero dará un pequeño delay. Mejor recargamos manualmente la lista desde products (ya modificada) mientras se sincroniza.
+                renderTable();
+            }
+
+            function deleteProduct(id) {
+                if (!confirm('¿Eliminar este producto?')) return;
+                products = products.filter(p => p.id !== id);
+                saveProductsToGitHub();
+                renderTable();
+            }
+
+            document.getElementById('saveProductBtn').addEventListener('click', saveProduct);
+        })();
+    </script>
+</body>
+</html>
